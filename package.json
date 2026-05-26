@@ -1,0 +1,16 @@
+{
+  "name": "feedflow",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "pnpm --filter backend dev",
+    "build:backend": "pnpm --filter backend build",
+    "start:backend": "pnpm --filter backend start:prod",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

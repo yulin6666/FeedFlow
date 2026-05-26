@@ -1,0 +1,29 @@
+# Node
+node_modules/
+dist/
+build/
+
+# Environment
+.env
+*.env.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Docker volumes
+postgres_data/
+n8n_data/
+
+# pnpm
+.pnpm-store/

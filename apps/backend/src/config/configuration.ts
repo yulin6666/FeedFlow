@@ -13,5 +13,11 @@ export default () => ({
     apiKey: process.env.N8N_API_KEY ?? '',
     webhookSecret: process.env.N8N_WEBHOOK_SECRET ?? '',
   },
-  backendUrl: process.env.BACKEND_URL ?? 'http://host.docker.internal:3000',
+  backendUrl: process.env.BACKEND_URL ?? 'http://localhost:3000',
+  claudeApiKey: process.env.CLAUDE_API_KEY ?? '',
+  deepseekApiKey: process.env.DEEPSEEK_API_KEY ?? '',
+  productHunt: {
+    apiKey: process.env.PRODUCT_HUNT_API_KEY ?? '',
+    apiSecret: process.env.PRODUCT_HUNT_API_SECRET ?? '',
+  },
 });

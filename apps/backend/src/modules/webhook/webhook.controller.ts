@@ -25,9 +25,10 @@ export class WebhookController {
       throw new UnauthorizedException('Invalid webhook secret');
     }
 
-    this.logger.log(`Received digest callback for digestId=${payload.digestId} status=${payload.status}`);
+    this.logger.log(`Received digest callback for subscriptionId=${payload.subscriptionId} status=${payload.status}`);
 
-    await this.digestsService.updateStatus(payload.digestId, payload.status, {
+    const digest = await this.digestsService.create(payload.subscriptionId);
+    await this.digestsService.updateStatus(digest.id, payload.status, {
       content: payload.content,
       summary: payload.summary,
       n8nExecutionId: payload.n8nExecutionId,

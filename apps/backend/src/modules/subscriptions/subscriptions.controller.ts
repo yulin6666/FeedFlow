@@ -41,6 +41,12 @@ export class SubscriptionsController {
     return this.subscriptionsService.update(id, dto);
   }
 
+  @Post(':id/trigger')
+  @ApiOperation({ summary: 'Manually trigger a workflow execution' })
+  trigger(@Param('id') id: string) {
+    return this.subscriptionsService.triggerWorkflow(id);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a subscription' })
   remove(@Param('id') id: string) {

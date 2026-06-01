@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { FeedSource, Frequency } from '../subscriptions/subscription.entity';
+import { buildWorkflow, getWebhookPath } from './workflow-templates';
 
 @Injectable()
 export class N8nService {
@@ -8,8 +10,10 @@ export class N8nService {
   private readonly client: AxiosInstance;
 
   constructor(private readonly configService: ConfigService) {
-    const baseURL = this.configService.get<string>('n8n.baseUrl');
-    const apiKey = this.configService.get<string>('n8n.apiKey');
+    const baseURL = this.configService.get<string>('n8n.baseUrl') ?? process.env.N8N_BASE_URL ?? 'http://localhost:5678';
+    const apiKey = this.configService.get<string>('n8n.apiKey') ?? process.env.N8N_API_KEY ?? '';
+
+    this.logger.log(`N8n baseURL: ${baseURL}, apiKey length: ${apiKey.length}`);
 
     this.client = axios.create({
       baseURL,
@@ -19,6 +23,69 @@ export class N8nService {
       },
     });
   }
+
+  // ─── Workflow 管理 ──────────────────────────────────────────────────────────
+
+  async createWorkflow(
+    subscriptionId: string,
+    source: FeedSource,
+    frequency: Frequency,
+  ): Promise<string> {
+    const backendUrl = this.configService.get<string>('backendUrl') ?? 'http://localhost:3000';
+    const webhookSecret = this.configService.get<string>('n8n.webhookSecret') ?? '';
+    const aiApiKey =
+      this.configService.get<string>('deepseekApiKey') ||
+      this.configService.get<string>('claudeApiKey') ||
+      '';
+
+    const workflowDef = buildWorkflow(source, {
+      subscriptionId,
+      frequency,
+      backendUrl,
+      webhookSecret,
+      aiApiKey,
+      productHuntApiKey: process.env.PRODUCT_HUNT_API_KEY ?? '',
+      productHuntApiSecret: process.env.PRODUCT_HUNT_API_SECRET ?? '',
+    });
+
+    const createRes = await this.client.post('/api/v1/workflows', workflowDef);
+    const workflowId: string = createRes.data.id;
+
+    // 激活工作流
+    await this.client.post(`/api/v1/workflows/${workflowId}/activate`);
+
+    this.logger.log(`Created and activated n8n workflow ${workflowId} for subscription ${subscriptionId}`);
+    return workflowId;
+  }
+
+  async deleteWorkflow(workflowId: string): Promise<void> {
+    await this.client.delete(`/api/v1/workflows/${workflowId}`);
+    this.logger.log(`Deleted n8n workflow ${workflowId}`);
+  }
+
+  async triggerWorkflow(subscriptionId: string): Promise<string> {
+    const baseURL = this.configService.get<string>('n8n.baseUrl');
+    const webhookPath = getWebhookPath(subscriptionId);
+    const res = await axios.post(`${baseURL}/webhook/${webhookPath}`, { trigger: 'manual' });
+    return res.data?.executionId ?? 'triggered';
+  }
+
+  async updateWorkflowSchedule(workflowId: string, frequency: Frequency): Promise<void> {
+    const cronMap: Record<Frequency, string> = {
+      [Frequency.DAILY]: '0 8 * * *',
+      [Frequency.WEEKLY]: '0 8 * * 1',
+      [Frequency.REALTIME]: '0 8 * * *',
+    };
+    const workflow = await this.client.get(`/api/v1/workflows/${workflowId}`);
+    const nodes = workflow.data.nodes ?? [];
+    const triggerNode = nodes.find((n: { type: string }) => n.type === 'n8n-nodes-base.scheduleTrigger');
+    if (triggerNode) {
+      triggerNode.parameters.rule.interval[0].expression = cronMap[frequency];
+      await this.client.put(`/api/v1/workflows/${workflowId}`, { ...workflow.data, nodes });
+    }
+  }
+
+  // ─── 查询接口 ───────────────────────────────────────────────────────────────
 
   async getWorkflows(): Promise<unknown[]> {
     const response = await this.client.get('/api/v1/workflows');
@@ -30,26 +97,6 @@ export class N8nService {
     return response.data;
   }
 
-  async activateWorkflow(workflowId: string): Promise<unknown> {
-    const response = await this.client.post(`/api/v1/workflows/${workflowId}/activate`);
-    return response.data;
-  }
-
-  async deactivateWorkflow(workflowId: string): Promise<unknown> {
-    const response = await this.client.post(`/api/v1/workflows/${workflowId}/deactivate`);
-    return response.data;
-  }
-
-  async triggerWebhook(webhookPath: string, payload: unknown): Promise<unknown> {
-    try {
-      const response = await this.client.post(`/webhook/${webhookPath}`, payload);
-      return response.data;
-    } catch (error) {
-      this.logger.error(`Failed to trigger n8n webhook: ${webhookPath}`, error);
-      throw error;
-    }
-  }
-
   async getExecutions(workflowId?: string): Promise<unknown[]> {
     const params = workflowId ? { workflowId } : {};
     const response = await this.client.get('/api/v1/executions', { params });
@@ -59,5 +106,14 @@ export class N8nService {
   async getExecution(executionId: string): Promise<unknown> {
     const response = await this.client.get(`/api/v1/executions/${executionId}`);
     return response.data;
+  }
+
+  async ping(): Promise<boolean> {
+    try {
+      await this.client.get('/api/v1/workflows');
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

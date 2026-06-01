@@ -13,6 +13,7 @@ import { HealthModule } from './modules/health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      envFilePath: ['.env', '../../.env'],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

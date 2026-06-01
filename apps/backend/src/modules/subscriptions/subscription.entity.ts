@@ -7,12 +7,10 @@ import {
 } from 'typeorm';
 
 export enum FeedSource {
-  RSS = 'rss',
-  TWITTER = 'twitter',
-  GITHUB = 'github',
   HACKER_NEWS = 'hacker_news',
-  REDDIT = 'reddit',
-  NEWSLETTER = 'newsletter',
+  PRODUCT_HUNT = 'product_hunt',
+  GITHUB_TRENDING = 'github_trending',
+  DEVTO = 'devto',
 }
 
 export enum Frequency {

@@ -3,9 +3,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DigestStatus } from '../digests/digest.entity';
 
 export class N8nWebhookPayloadDto {
-  @ApiProperty({ description: 'Digest ID to update' })
+  @ApiProperty({ description: 'Subscription ID to create digest for' })
   @IsString()
-  digestId: string;
+  subscriptionId: string;
 
   @ApiProperty({ enum: DigestStatus })
   @IsEnum(DigestStatus)

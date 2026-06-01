@@ -6,7 +6,7 @@ export class InitSchema1700000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TYPE "public"."subscriptions_source_enum" AS ENUM(
-        'rss', 'twitter', 'github', 'hacker_news', 'reddit', 'newsletter'
+        'hacker_news', 'product_hunt', 'github_trending', 'devto'
       )
     `);
 

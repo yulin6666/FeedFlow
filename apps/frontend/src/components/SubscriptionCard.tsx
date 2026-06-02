@@ -4,14 +4,16 @@ import { SOURCE_META, FREQUENCY_LABELS } from '@/lib/constants'
 import type { Subscription } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Trash2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react'
 
 interface SubscriptionCardProps {
   subscription: Subscription
   onDelete: (id: string) => void
   onToggle: (id: string, isActive: boolean) => void
   onViewDigests: (subscription: Subscription) => void
+  onTrigger: (id: string) => void
   isDeleting?: boolean
+  isTriggering?: boolean
 }
 
 export function SubscriptionCard({
@@ -19,7 +21,9 @@ export function SubscriptionCard({
   onDelete,
   onToggle,
   onViewDigests,
+  onTrigger,
   isDeleting,
+  isTriggering,
 }: SubscriptionCardProps) {
   const meta = SOURCE_META[subscription.source]
 
@@ -42,6 +46,14 @@ export function SubscriptionCard({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => onTrigger(subscription.id)}
+            disabled={isTriggering || !subscription.isActive}
+            className="p-1 rounded hover:bg-white/60 transition-colors disabled:opacity-40"
+            title="立刻更新"
+          >
+            <RefreshCw className={cn('h-4 w-4 text-zinc-400 hover:text-zinc-600', isTriggering && 'animate-spin')} />
+          </button>
           <button
             onClick={() => onToggle(subscription.id, !subscription.isActive)}
             className="p-1 rounded hover:bg-white/60 transition-colors"

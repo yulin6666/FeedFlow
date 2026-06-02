@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { SOURCE_META, FEED_SOURCES, FREQUENCY_LABELS } from '@/lib/constants'
 import type { FeedSource, Subscription, Digest } from '@/types'
-import { useSubscriptions, useCreateSubscription, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
+import { useSubscriptions, useCreateSubscription, useUpdateSubscription, useDeleteSubscription, useTriggerSubscription } from '@/hooks/useSubscriptions'
 import { SourceSelector } from '@/components/SourceSelector'
 import { SubscriptionCard } from '@/components/SubscriptionCard'
 import { DigestDetail } from '@/components/DigestDetail'
@@ -38,6 +38,7 @@ export default function Home({ userId }: HomeProps) {
   const createMutation = useCreateSubscription()
   const updateMutation = useUpdateSubscription()
   const deleteMutation = useDeleteSubscription()
+  const triggerMutation = useTriggerSubscription()
 
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null)
   const [selectedDigest, setSelectedDigest] = useState<Digest | null>(null)
@@ -75,6 +76,15 @@ export default function Home({ userId }: HomeProps) {
       await updateMutation.mutateAsync({ id, dto: { isActive } })
     } catch (e) {
       toast({ title: '操作失败', description: (e as Error).message, variant: 'destructive' })
+    }
+  }
+
+  const handleTrigger = async (id: string) => {
+    try {
+      await triggerMutation.mutateAsync(id)
+      toast({ title: '已触发更新', description: '摘要生成中，稍后刷新查看' })
+    } catch (e) {
+      toast({ title: '触发失败', description: (e as Error).message, variant: 'destructive' })
     }
   }
 
@@ -143,7 +153,9 @@ export default function Home({ userId }: HomeProps) {
                   onDelete={handleDelete}
                   onToggle={handleToggle}
                   onViewDigests={setSelectedSub}
+                  onTrigger={handleTrigger}
                   isDeleting={deleteMutation.isPending}
+                  isTriggering={triggerMutation.isPending && triggerMutation.variables === sub.id}
                 />
               ))}
             </div>

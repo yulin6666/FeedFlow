@@ -4,6 +4,7 @@ import {
   createSubscription,
   updateSubscription,
   deleteSubscription,
+  triggerSubscription,
 } from '@/api/subscriptions'
 import type { CreateSubscriptionDto, UpdateSubscriptionDto } from '@/types'
 
@@ -42,6 +43,16 @@ export function useDeleteSubscription() {
     mutationFn: (id: string) => deleteSubscription(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] })
+    },
+  })
+}
+
+export function useTriggerSubscription() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => triggerSubscription(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['digests'] })
     },
   })
 }

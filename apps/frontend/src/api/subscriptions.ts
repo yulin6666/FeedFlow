@@ -24,3 +24,8 @@ export async function updateSubscription(
 export async function deleteSubscription(id: string): Promise<void> {
   await apiClient.delete(`/subscriptions/${id}`)
 }
+
+export async function triggerSubscription(id: string): Promise<{ executionId: string }> {
+  const res = await apiClient.post<{ executionId: string }>(`/subscriptions/${id}/trigger`)
+  return res.data
+}

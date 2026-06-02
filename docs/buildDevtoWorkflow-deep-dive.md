@@ -300,53 +300,209 @@ buildCallbackNode(backendUrl, webhookSecret, subscriptionId, [1120, 280]),
 connections: buildDataConnections('获取 Dev.to 文章', ['格式化数据']),
 ```
 
-### `buildDataConnections` 函数逻辑
+### 先理解 n8n connections 的数据结构
 
-```typescript
-function buildDataConnections(
-  fetchNodeName: string,        // '获取 Dev.to 文章'
-  extraNodes: string[] = [],    // ['格式化数据']
-): Record<string, object> {
-  // 构建节点链
-  const chain = [fetchNodeName, ...extraNodes];
-  // chain = ['获取 Dev.to 文章', '格式化数据']
+n8n 的 `connections` 是一个对象，**key 是节点名称，value 是这个节点的输出连接到哪里**。
 
-  // 两个 Trigger 都指向第一个节点
-  const conn: Record<string, object> = {
-    'Schedule Trigger': {
-      main: [[{ node: chain[0], type: 'main', index: 0 }]]
-    },
-    'Webhook Trigger': {
-      main: [[{ node: chain[0], type: 'main', index: 0 }]]
-    },
-  };
+可以把它理解成一张"路由表"：每个节点执行完之后，数据应该流向哪个节点。
 
-  // 链式连接 chain 里的节点
-  for (let i = 0; i < chain.length - 1; i++) {
-    conn[chain[i]] = {
-      main: [[{ node: chain[i + 1], type: 'main', index: 0 }]]
-    };
-  }
-
-  // 最后一个节点连到 AI
-  const last = chain[chain.length - 1];
-  conn[last] = {
-    main: [[{ node: 'AI 生成摘要', type: 'main', index: 0 }]]
-  };
-
-  // 固定的后续链路
-  conn['AI 生成摘要'] = {
-    main: [[{ node: '解析 AI 响应', type: 'main', index: 0 }]]
-  };
-  conn['解析 AI 响应'] = {
-    main: [[{ node: 'Webhook 回调 NestJS', type: 'main', index: 0 }]]
-  };
-
-  return conn;
+```
+connections = {
+  "节点A": { 输出到 → "节点B" },
+  "节点B": { 输出到 → "节点C" },
+  "节点C": { 输出到 → "节点D" },
 }
 ```
 
-### 生成的连接关系
+**注意**：connections 只描述"从哪里出发"，不描述"从哪里进入"。所以每个 key 是出发节点，value 是目标节点。
+
+---
+
+### connections 的完整格式
+
+```typescript
+{
+  "节点名称": {
+    "main": [          // ← 第一层：输出端口列表（main 是主输出端口的名字）
+      [                // ← 第二层：这个端口的第一条分支
+        {              // ← 第三层：这条分支连接到的目标节点
+          node: "目标节点名",
+          type: "main",  // 连接到目标节点的哪个输入端口
+          index: 0       // 第几个输入端口（从 0 开始）
+        }
+      ]
+    ]
+  }
+}
+```
+
+**为什么是三层嵌套？**
+
+```
+main: [              ← 一个节点可以有多个输出端口（如 main、error）
+  [                  ← 一个端口可以有多条分支（如 IF 节点的 true/false）
+    { node: "A" },   ← 一条分支可以同时连接多个节点（并行）
+    { node: "B" }
+  ]
+]
+```
+
+在 FeedFlow 里每个节点都是单输出、单分支、单目标，所以始终是 `[[{ node: "..." }]]`。
+
+---
+
+### `buildDataConnections` 函数逐行解析
+
+```typescript
+function buildDataConnections(
+  fetchNodeName: string,     // 第一个数据节点的名字，如 '获取 Dev.to 文章'
+  extraNodes: string[] = [], // 中间的额外节点，如 ['格式化数据']
+): Record<string, object> { // 返回类型：key 是 string，value 是 object 的对象
+```
+
+---
+
+**第一步：构建"可变节点链"**
+
+```typescript
+const chain = [fetchNodeName, ...extraNodes];
+// 传入：fetchNodeName = '获取 Dev.to 文章', extraNodes = ['格式化数据']
+// 结果：chain = ['获取 Dev.to 文章', '格式化数据']
+```
+
+`chain` 代表"因数据源不同而变化的节点"。不同数据源的 chain 长度不同：
+- Dev.to：`['获取 Dev.to 文章', '格式化数据']`（2个）
+- GitHub Trending：`['获取 GitHub Trending', '格式化数据']`（2个）
+- Hacker News：`['获取 Top Stories', '取前 10 条 ID', '获取每条详情', '聚合结果', '格式化数据']`（5个）
+
+---
+
+**第二步：两个 Trigger 都指向 chain 的第一个节点**
+
+```typescript
+const conn: Record<string, object> = {
+  'Schedule Trigger': { main: [[{ node: chain[0], type: 'main', index: 0 }]] },
+  'Webhook Trigger':  { main: [[{ node: chain[0], type: 'main', index: 0 }]] },
+};
+// chain[0] = '获取 Dev.to 文章'
+// 效果：
+//   Schedule Trigger → 获取 Dev.to 文章
+//   Webhook Trigger  → 获取 Dev.to 文章
+```
+
+两个触发器都连到同一个节点，形成"或"的关系：任意一个触发，数据都从同一个入口进入。
+
+---
+
+**第三步：用 for 循环把 chain 里的节点依次串联**
+
+```typescript
+for (let i = 0; i < chain.length - 1; i++) {
+  conn[chain[i]] = { main: [[{ node: chain[i + 1], type: 'main', index: 0 }]] };
+}
+```
+
+用具体数字模拟一遍（chain = `['获取 Dev.to 文章', '格式化数据']`，长度为 2）：
+
+```
+i = 0：
+  chain[0] = '获取 Dev.to 文章'
+  chain[1] = '格式化数据'
+  → conn['获取 Dev.to 文章'] = { main: [[{ node: '格式化数据' }]] }
+
+i = 1：
+  1 < chain.length - 1 = 1 → 条件不成立，循环结束
+```
+
+所以循环只跑了一次，建立了：`获取 Dev.to 文章 → 格式化数据`
+
+如果是 Hacker News（chain 有 5 个节点），循环跑 4 次，依次建立：
+```
+获取 Top Stories → 取前 10 条 ID
+取前 10 条 ID   → 获取每条详情
+获取每条详情    → 聚合结果
+聚合结果        → 格式化数据
+```
+
+---
+
+**第四步：chain 的最后一个节点连到 AI**
+
+```typescript
+const last = chain[chain.length - 1];
+// chain = ['获取 Dev.to 文章', '格式化数据']
+// chain.length - 1 = 1
+// last = '格式化数据'
+
+conn[last] = { main: [[{ node: 'AI 生成摘要', type: 'main', index: 0 }]] };
+// 效果：格式化数据 → AI 生成摘要
+```
+
+无论 chain 有多长，最后一个节点总是连到 `AI 生成摘要`。这是"可变部分"和"固定部分"的接口。
+
+---
+
+**第五步：固定的后续链路**
+
+```typescript
+conn['AI 生成摘要'] = { main: [[{ node: '解析 AI 响应', type: 'main', index: 0 }]] };
+conn['解析 AI 响应'] = { main: [[{ node: 'Webhook 回调 NestJS', type: 'main', index: 0 }]] };
+// 效果：
+//   AI 生成摘要 → 解析 AI 响应
+//   解析 AI 响应 → Webhook 回调 NestJS
+```
+
+这三个节点对所有数据源都一样，所以硬编码在函数里。
+
+---
+
+### 函数执行完后 conn 的完整内容
+
+```typescript
+// 调用：buildDataConnections('获取 Dev.to 文章', ['格式化数据'])
+// 最终 conn 对象：
+
+{
+  // 第二步写入
+  'Schedule Trigger': { main: [[{ node: '获取 Dev.to 文章', type: 'main', index: 0 }]] },
+  'Webhook Trigger':  { main: [[{ node: '获取 Dev.to 文章', type: 'main', index: 0 }]] },
+
+  // 第三步写入（for 循环）
+  '获取 Dev.to 文章': { main: [[{ node: '格式化数据', type: 'main', index: 0 }]] },
+
+  // 第四步写入
+  '格式化数据': { main: [[{ node: 'AI 生成摘要', type: 'main', index: 0 }]] },
+
+  // 第五步写入
+  'AI 生成摘要':       { main: [[{ node: '解析 AI 响应', type: 'main', index: 0 }]] },
+  '解析 AI 响应':      { main: [[{ node: 'Webhook 回调 NestJS', type: 'main', index: 0 }]] },
+}
+```
+
+对应的数据流：
+
+```
+Schedule Trigger ──┐
+                   ├──→ 获取 Dev.to 文章 → 格式化数据 → AI 生成摘要 → 解析 AI 响应 → Webhook 回调 NestJS
+Webhook Trigger  ──┘
+```
+
+---
+
+### 对比不同数据源的 chain 差异
+
+| 数据源 | 调用方式 | chain 内容 |
+|--------|----------|------------|
+| Dev.to | `buildDataConnections('获取 Dev.to 文章', ['格式化数据'])` | `['获取 Dev.to 文章', '格式化数据']` |
+| GitHub | `buildDataConnections('获取 GitHub Trending', ['格式化数据'])` | `['获取 GitHub Trending', '格式化数据']` |
+| Hacker News | `buildDataConnections('获取 Top Stories', ['取前 10 条 ID', '获取每条详情', '聚合结果', '格式化数据'])` | 5 个节点 |
+| Product Hunt | `buildDataConnections('获取 PH Token', ['获取 Product Hunt', '格式化数据'])` | 3 个节点 |
+
+**函数的设计思路**：把"可变的数据获取链"和"固定的 AI 处理链"分开，通过 `chain` 参数灵活拼接。
+
+---
+
+### 生成的连接关系（最终 JSON）
 
 ```json
 {

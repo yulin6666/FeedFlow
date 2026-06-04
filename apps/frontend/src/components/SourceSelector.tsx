@@ -13,7 +13,7 @@ interface SourceSelectorProps {
 
 export function SourceSelector({ subscribedSources, onSubscribe, isLoading }: SourceSelectorProps) {
   const [selected, setSelected] = useState<FeedSource | null>(null)
-  const [frequency, setFrequency] = useState<Frequency>('daily')
+  const [frequency, setFrequency] = useState<Frequency>('monthly')
 
   const handleSubscribe = () => {
     if (!selected) return
@@ -58,7 +58,7 @@ export function SourceSelector({ subscribedSources, onSubscribe, isLoading }: So
         <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
           <span className="text-sm text-zinc-600">订阅频率：</span>
           <div className="flex gap-2">
-            {(['daily', 'weekly'] as Frequency[]).map((f) => (
+            {(['monthly'] as Frequency[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setFrequency(f)}

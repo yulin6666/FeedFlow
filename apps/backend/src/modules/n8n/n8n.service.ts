@@ -72,9 +72,7 @@ export class N8nService {
 
   async updateWorkflowSchedule(workflowId: string, frequency: Frequency): Promise<void> {
     const cronMap: Record<Frequency, string> = {
-      [Frequency.DAILY]: '0 8 * * *',
-      [Frequency.WEEKLY]: '0 8 * * 1',
-      [Frequency.REALTIME]: '0 8 * * *',
+      [Frequency.MONTHLY]: '0 0 8 1 * *',
     };
     const workflow = await this.client.get(`/api/v1/workflows/${workflowId}`);
     const nodes = workflow.data.nodes ?? [];

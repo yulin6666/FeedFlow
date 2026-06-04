@@ -57,6 +57,5 @@ export const SOURCE_META: Record<FeedSource, SourceMeta> = {
 export const FEED_SOURCES = Object.keys(SOURCE_META) as FeedSource[]
 
 export const FREQUENCY_LABELS: Record<string, string> = {
-  daily: '每日',
-  weekly: '每周',
+  monthly: '每月',
 }

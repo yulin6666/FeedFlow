@@ -19,7 +19,7 @@ export class CreateSubscriptionDto {
   @IsUrl()
   sourceUrl: string;
 
-  @ApiPropertyOptional({ enum: Frequency, default: Frequency.DAILY })
+  @ApiPropertyOptional({ enum: Frequency, default: Frequency.MONTHLY })
   @IsEnum(Frequency)
   @IsOptional()
   frequency?: Frequency;

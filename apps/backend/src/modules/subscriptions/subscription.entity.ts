@@ -14,9 +14,7 @@ export enum FeedSource {
 }
 
 export enum Frequency {
-  DAILY = 'daily',
-  WEEKLY = 'weekly',
-  REALTIME = 'realtime',
+  MONTHLY = 'monthly',
 }
 
 @Entity('subscriptions')
@@ -36,7 +34,7 @@ export class Subscription {
   @Column()
   sourceUrl: string;
 
-  @Column({ type: 'enum', enum: Frequency, default: Frequency.DAILY })
+  @Column({ type: 'enum', enum: Frequency, default: Frequency.MONTHLY })
   frequency: Frequency;
 
   @Column({ default: true })

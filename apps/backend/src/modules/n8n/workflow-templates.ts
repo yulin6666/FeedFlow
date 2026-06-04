@@ -1,9 +1,7 @@
 import { FeedSource, Frequency } from '../subscriptions/subscription.entity';
 
 const CRON_MAP: Record<Frequency, string> = {
-  [Frequency.DAILY]: '0 8 * * *',
-  [Frequency.WEEKLY]: '0 8 * * 1',
-  [Frequency.REALTIME]: '0 * * * *',
+  [Frequency.MONTHLY]: '0 0 8 1 * *',  // 每月 1 号早上 8:00（6位：秒 分 时 日 月 周）
 };
 
 interface TemplateVars {
@@ -202,7 +200,7 @@ if (all.length === 1 && Array.isArray(all[0].json)) {
 } else {
   ids = all.map(item => item.json);
 }
-return ids.slice(0, 10).map(id => ({ json: { id } }));
+return ids.slice(0, 3).map(id => ({ json: { id } }));
           `.trim(),
         },
       },
@@ -294,13 +292,9 @@ function buildGithubTrendingWorkflow(vars: TemplateVars): object {
         position: [520, 280],
         parameters: {
           jsCode: `
-const repos = $input.first().json.slice(0, 10).map((repo, index) => ({
+const repos = $input.first().json.slice(0, 3).map((repo, index) => ({
   title: repo.fullname || repo.name,
   url: repo.url || \`https://github.com/\${repo.fullname}\`,
-  summary: repo.description || '',
-  score: repo.stars || 0,
-  author: repo.author || '',
-  tags: repo.language ? [repo.language] : [],
   position: index + 1
 }));
 const aiPrompt = '以下是今日热门内容，请用中文为每条生成一句话摘要，并给出整体趋势总结。返回严格 JSON 格式：{ "summary": "整体摘要", "items": [{"title": "", "url": "", "summary": ""}] }\\n\\n' + JSON.stringify(repos);
@@ -334,7 +328,7 @@ function buildDevtoWorkflow(vars: TemplateVars): object {
         position: [320, 280],
         parameters: {
           method: 'GET',
-          url: 'https://dev.to/api/articles?top=7&per_page=10',
+          url: 'https://dev.to/api/articles?top=7&per_page=3',
           options: {},
         },
       },
@@ -356,13 +350,9 @@ if (all.length === 1 && Array.isArray(all[0].json)) {
 const articles = rawArticles.map((article, index) => ({
   title: article.title,
   url: article.url,
-  summary: article.description || '',
-  score: article.positive_reactions_count || 0,
-  author: article.user?.name || '',
-  tags: article.tag_list || [],
   position: index + 1
 }));
-const aiPrompt = '以下是今日热门内容，请用中文为每条生成一句话摘要，并给出整体趋势总结。返回严格 JSON 格式：{ "summary": "整体摘要", "items": [{"title": "", "url": "", "summary": ""}] }\\n\\n' + JSON.stringify(articles);
+const aiPrompt = '以下是本月热门内容，请用中文为每条生成一句话摘要，并给出整体趋势总结。返回严格 JSON 格式：{ "summary": "整体摘要", "items": [{"title": "", "url": "", "summary": ""}] }\\n\\n' + JSON.stringify(articles);
 return [{ json: { items: articles, aiPrompt } }];
           `.trim(),
         },

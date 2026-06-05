@@ -56,7 +56,7 @@ export function SourceSelector({ subscribedSources, onSubscribe, isLoading }: So
 
       {selected && (
         <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-          <span className="text-sm text-zinc-600">订阅频率：</span>
+          <span className="text-sm text-zinc-600">Frequency:</span>
           <div className="flex gap-2">
             {(['monthly'] as Frequency[]).map((f) => (
               <button
@@ -79,7 +79,7 @@ export function SourceSelector({ subscribedSources, onSubscribe, isLoading }: So
             disabled={isLoading}
             className="ml-auto"
           >
-            {isLoading ? '订阅中...' : '订阅'}
+            {isLoading ? 'Subscribing...' : 'Subscribe'}
           </Button>
         </div>
       )}

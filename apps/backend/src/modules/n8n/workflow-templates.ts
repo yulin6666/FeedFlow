@@ -352,7 +352,7 @@ const articles = rawArticles.map((article, index) => ({
   url: article.url,
   position: index + 1
 }));
-const aiPrompt = '以下是本月热门内容，请用中文为每条生成一句话摘要，并给出整体趋势总结。返回严格 JSON 格式：{ "summary": "整体摘要", "items": [{"title": "", "url": "", "summary": ""}] }\\n\\n' + JSON.stringify(articles);
+const aiPrompt = "Here are this month's top articles. For each article, write a one-sentence English summary. Also provide an overall trend summary in English. Return strict JSON: { \\"summary\\": \\"overall summary\\", \\"items\\": [{\\"title\\": \\"\\", \\"url\\": \\"\\", \\"summary\\": \\"\\"}] }\\n\\n" + JSON.stringify(articles);
 return [{ json: { items: articles, aiPrompt } }];
           `.trim(),
         },

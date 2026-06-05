@@ -55,9 +55,9 @@ export default function Home({ userId }: HomeProps) {
         sourceUrl: meta.url,
         frequency,
       })
-      toast({ title: '订阅成功', description: `已订阅 ${meta.label}` })
+      toast({ title: 'Subscribed', description: `Subscribed to ${meta.label}` })
     } catch (e) {
-      toast({ title: '订阅失败', description: (e as Error).message, variant: 'destructive' })
+      toast({ title: 'Subscription failed', description: (e as Error).message, variant: 'destructive' })
     }
   }
 
@@ -65,9 +65,9 @@ export default function Home({ userId }: HomeProps) {
     try {
       await deleteMutation.mutateAsync(id)
       if (selectedSub?.id === id) setSelectedSub(null)
-      toast({ title: '已删除订阅' })
+      toast({ title: 'Subscription deleted' })
     } catch (e) {
-      toast({ title: '删除失败', description: (e as Error).message, variant: 'destructive' })
+      toast({ title: 'Delete failed', description: (e as Error).message, variant: 'destructive' })
     }
   }
 
@@ -75,16 +75,16 @@ export default function Home({ userId }: HomeProps) {
     try {
       await updateMutation.mutateAsync({ id, dto: { isActive } })
     } catch (e) {
-      toast({ title: '操作失败', description: (e as Error).message, variant: 'destructive' })
+      toast({ title: 'Operation failed', description: (e as Error).message, variant: 'destructive' })
     }
   }
 
   const handleTrigger = async (id: string) => {
     try {
       await triggerMutation.mutateAsync(id)
-      toast({ title: '已触发更新', description: '摘要生成中，稍后刷新查看' })
+      toast({ title: 'Update triggered', description: 'Digest is being generated, refresh later to view' })
     } catch (e) {
-      toast({ title: '触发失败', description: (e as Error).message, variant: 'destructive' })
+      toast({ title: 'Trigger failed', description: (e as Error).message, variant: 'destructive' })
     }
   }
 
@@ -100,12 +100,12 @@ export default function Home({ userId }: HomeProps) {
             <Rss className="h-6 w-6 text-zinc-900" />
             <h1 className="text-2xl font-bold text-zinc-900">FeedFlow</h1>
           </div>
-          <p className="text-zinc-500 text-sm">订阅你感兴趣的信息源，自动生成 AI 摘要</p>
+          <p className="text-zinc-500 text-sm">Subscribe to your favorite sources and get AI-powered digests</p>
         </div>
 
         {/* Add Subscription */}
         <section className="mb-8">
-          <h2 className="text-base font-semibold text-zinc-900 mb-3">添加订阅</h2>
+          <h2 className="text-base font-semibold text-zinc-900 mb-3">Add Subscription</h2>
           <div className="rounded-xl border border-zinc-200 bg-white p-4">
             <SourceSelector
               subscribedSources={subscribedSources}
@@ -119,7 +119,7 @@ export default function Home({ userId }: HomeProps) {
         <section>
           <h2 className="text-base font-semibold text-zinc-900 mb-3 flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
-            我的订阅
+            My Subscriptions
             {subscriptions && (
               <span className="text-xs font-normal text-zinc-400">({subscriptions.length})</span>
             )}
@@ -133,19 +133,19 @@ export default function Home({ userId }: HomeProps) {
 
           {error && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-600">
-              加载失败：{error.message}
+              Failed to load: {error.message}
             </div>
           )}
 
           {!isLoading && !error && subscriptions?.length === 0 && (
             <div className="rounded-xl border-2 border-dashed border-zinc-200 p-8 text-center">
               <Rss className="h-8 w-8 text-zinc-300 mx-auto mb-2" />
-              <p className="text-sm text-zinc-400">还没有订阅，从上方选择数据源开始吧</p>
+              <p className="text-sm text-zinc-400">No subscriptions yet. Add one from above to get started.</p>
             </div>
           )}
 
           {subscriptions && subscriptions.length > 0 && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4">
               {subscriptions.map((sub) => (
                 <SubscriptionCard
                   key={sub.id}
@@ -176,11 +176,11 @@ export default function Home({ userId }: HomeProps) {
                   <span className="text-xl">{meta.icon}</span>
                   <div>
                     <div className="font-semibold text-zinc-900 text-sm leading-tight">
-                      {meta.label} 摘要
+                      {meta.label} Digests
                     </div>
                     {selectedDigest && (
                       <div className="text-xs text-zinc-400 mt-0.5">
-                        {new Date(selectedDigest.createdAt).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {new Date(selectedDigest.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     )}
                   </div>
@@ -202,14 +202,14 @@ export default function Home({ userId }: HomeProps) {
                       className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-700 mb-5 transition-colors"
                     >
                       <ArrowLeft className="h-3 w-3" />
-                      返回列表
+                      Back to list
                     </button>
 
                     {/* Summary card */}
                     {selectedDigest.summary && (
                       <div className={cn('rounded-xl p-4 mb-5 border', meta.borderClass, meta.bgClass.replace('hover:bg-orange-100', '').replace('hover:bg-red-100', '').replace('hover:bg-gray-100', '').replace('hover:bg-indigo-100', ''))}>
                         <div className={cn('text-xs font-semibold uppercase tracking-wide mb-2', meta.textClass)}>
-                          AI 总结
+                          AI Summary
                         </div>
                         <p className="text-sm text-zinc-700 leading-relaxed">
                           {selectedDigest.summary}
@@ -221,7 +221,7 @@ export default function Home({ userId }: HomeProps) {
                     {items.length > 0 ? (
                       <div>
                         <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">
-                          {items.length} 篇文章
+                          {items.length} articles
                         </div>
                         <div className="space-y-3">
                           {items.map((item, i) => (

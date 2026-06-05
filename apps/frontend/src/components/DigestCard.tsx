@@ -9,17 +9,17 @@ interface DigestCardProps {
 }
 
 const statusConfig = {
-  pending: { icon: Clock, label: '等待中', className: 'text-yellow-500' },
-  processing: { icon: Loader2, label: '处理中', className: 'text-blue-500 animate-spin' },
-  completed: { icon: CheckCircle, label: '已完成', className: 'text-green-500' },
-  failed: { icon: XCircle, label: '失败', className: 'text-red-500' },
+  pending: { icon: Clock, label: 'Pending', className: 'text-yellow-500' },
+  processing: { icon: Loader2, label: 'Processing', className: 'text-blue-500 animate-spin' },
+  completed: { icon: CheckCircle, label: 'Completed', className: 'text-green-500' },
+  failed: { icon: XCircle, label: 'Failed', className: 'text-red-500' },
 }
 
 export function DigestCard({ digest, onClick }: DigestCardProps) {
   const config = statusConfig[digest.status]
   const StatusIcon = config.icon
   const date = new Date(digest.createdAt)
-  const dateStr = date.toLocaleDateString('zh-CN', {
+  const dateStr = date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -44,7 +44,7 @@ export function DigestCard({ digest, onClick }: DigestCardProps) {
             <div className="text-sm font-medium text-zinc-900 truncate">
               {digest.summary
                 ? digest.summary.slice(0, 60) + (digest.summary.length > 60 ? '...' : '')
-                : `摘要 ${digest.id.slice(0, 8)}`}
+                : `Digest ${digest.id.slice(0, 8)}`}
             </div>
             <div className="text-xs text-zinc-400 mt-0.5">{dateStr}</div>
           </div>

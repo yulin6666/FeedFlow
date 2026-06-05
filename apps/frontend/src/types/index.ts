@@ -1,4 +1,4 @@
-export type FeedSource = 'hacker_news' | 'product_hunt' | 'github_trending' | 'devto'
+export type FeedSource = 'devto'
 export type Frequency = 'monthly'
 export type DigestStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
